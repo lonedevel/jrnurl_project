@@ -57,7 +57,7 @@ class ModelTests(TestCase):
         self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
 
-    def test_create_new_url_collection(self):
+    def test_create_new_url_collection_str(self):
         """Test creating a new urlcollection"""
         urlcollection = models.URLCollection.objects.create(
             name='Interesting URLs',
@@ -68,3 +68,56 @@ class ModelTests(TestCase):
         self.assertEqual(str(urlcollection),
                          f'{urlcollection.get_collection_type_display()} - '
                          f'{urlcollection.name}')
+
+    def test_create_new_url_item_str(self):
+        """Test creating a new urlitem"""
+        urlitem = models.URLItem.objects.create(
+            title='Tryit Editor v3.6',
+            url='https://www.w3schools.com/html/tryit.asp?'
+                'filename=tryhtml_intro',
+            visits=1,
+            user=sample_user()
+        )
+        self.assertEqual(str(urlitem), urlitem.title)
+
+    def test_assign_urlitems_to_urlcollection(self):
+        """Test creating collections of urlitems"""
+        user = sample_user()
+
+        urlcollection = models.URLCollection.objects.create(
+            name='Interesting HTML URLs',
+            description='A collection of very interesting HTML test URLs',
+            collection_type=models.URLCollection.OTHER,
+            user=user
+        )
+
+        urlitem1 = models.URLItem.objects.create(
+            title='Tryit Editor v3.6',
+            url='https://www.w3schools.com/html/tryit.asp?'
+                'filename=tryhtml_intro',
+            visits=1,
+            user=user
+        )
+
+        urlitem2 = models.URLItem.objects.create(
+            title='HTML5test - How well does your browser support HTML5?',
+            url='https://html5test.com',
+            visits=1,
+            user=user
+        )
+
+        models.URLCollectionItems.objects.create(
+            collection=urlcollection,
+            item=urlitem1,
+            user=user
+        )
+
+        models.URLCollectionItems.objects.create(
+            collection=urlcollection,
+            item=urlitem2,
+            user=user
+        )
+
+        urlcollection.refresh_from_db()
+
+        self.assertEqual(urlcollection.items.all().count(), 2)
