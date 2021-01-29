@@ -6,7 +6,6 @@ from rest_framework.test import APIClient
 from core.models import URLCollection, URLItem
 from jrnurl.serializers import URLCollectionSerializer, URLItemSerializer
 
-
 URLCOLLECTION_URL = reverse('jrnurl:urlcollection-list')
 URLITEM_URL = reverse('jrnurl:urlitem-list')
 
@@ -118,3 +117,60 @@ class PrivateApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res.data), 1)
         self.assertEqual(res.data, serializer.data)
+
+    def test_create_simple_urlcollection_successful(self):
+        """Test creating a new simple urlcollection using the api"""
+        payload = {
+            'name': 'Simple URL Collection',
+            'description':
+                'A nicely curated test collection of incredible URLs',
+            'collection_type': 400,
+            'user': self.user.id
+        }
+        res = self.client.post(URLCOLLECTION_URL, payload)
+        # print(res.data)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        exists = URLCollection.objects.filter(
+            user=self.user,
+            name=payload['name']
+        ).exists()
+        self.assertTrue(exists)
+
+    def test_create_complex_urlcollection_successful(self):
+        """Test creating a new complex urlcollection using the api"""
+        payload = {
+            'name': 'Complex URL Collection',
+            'description':
+                'A nicely curated test collection of incredible URLs',
+            'collection_type': 400,
+            'user': self.user.id,
+            'keywords': ['test', 'url', 'complex'],
+            'items': [
+                {
+                    'title':
+                        'HTML5test - '
+                        'How well does your browser support HTML5?',
+                    'url': 'https://html5test.com',
+                    'visits': 1,
+                    'user': self.user.id
+                },
+                {
+                    'title': 'Google Search',
+                    'url': 'http://google.com',
+                    'visits': 1,
+                    'user': self.user.id
+                }
+            ]
+        }
+        res = self.client.post(URLCOLLECTION_URL, payload)
+        # print(res.data)
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        exists = URLCollection.objects.filter(
+            user=self.user,
+            name=payload['name']
+        ).exists()
+        self.assertTrue(exists)

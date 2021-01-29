@@ -69,7 +69,8 @@ class URLCollection(models.Model):
     tags = ArrayField(models.CharField(max_length=45),
                       null=True,
                       blank=True, size=25)
-    items = models.ManyToManyField('URLItem', through='URLCollectionItems')
+    items = models.ManyToManyField('URLItem', through='URLCollectionItems',
+                                   blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
 
@@ -98,7 +99,8 @@ class URLItem(models.Model):
                       null=True,
                       blank=True)
     collection = models.ManyToManyField('URLCollection',
-                                        through='URLCollectionItems')
+                                        through='URLCollectionItems',
+                                        blank=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL,
                              on_delete=models.CASCADE)
 
