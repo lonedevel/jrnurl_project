@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from drf_writable_nested.serializers import WritableNestedModelSerializer
 from core.models import URLCollection, URLItem, URLCollectionItems
 
 
@@ -11,6 +12,13 @@ class URLItemSerializer(serializers.ModelSerializer):
                   'tags', 'user',)
         read_only_fields = ('id',)
 
+    def create(self, validated_data):
+        """Create new urlitem if it does not yet exist"""
+        urlitem, created = URLItem.objects.get_or_create(**validated_data)
+        if created:
+            urlitem.save()
+        return urlitem
+
 
 class URLCollectionItemSerializer(serializers.ModelSerializer):
     """Serializer for the URLCollectionItem many-to-many objects"""
@@ -19,7 +27,8 @@ class URLCollectionItemSerializer(serializers.ModelSerializer):
         fields = ('collection', 'item')
 
 
-class URLCollectionSerializer(serializers.ModelSerializer):
+class URLCollectionSerializer(WritableNestedModelSerializer,
+                              serializers.ModelSerializer):
     """Serializer for URLCollection objects"""
     items = URLItemSerializer(many=True, required=False)
     # items = serializers.PrimaryKeyRelatedField(
@@ -34,11 +43,15 @@ class URLCollectionSerializer(serializers.ModelSerializer):
         extra_kwargs = {'items': {'required': False}}
 
     def create(self, validated_data):
+        """Create a new urlcollection if it does not exist
+            and new urlitem tree if defined"""
+
         items = []
         if 'items' in validated_data:
             items = validated_data.pop('items')
 
-        urlcollection = URLCollection.objects.create(**validated_data)
+        urlcollection, created = \
+            URLCollection.objects.get_or_create(**validated_data)
 
         for item in items:
             item_obj = URLItem.objects.create(title=item['title'],
@@ -48,6 +61,7 @@ class URLCollectionSerializer(serializers.ModelSerializer):
             urlcollection.items.add(item_obj,
                                     through_defaults={'user': item['user']})
 
-        urlcollection.save()
+        if created:
+            urlcollection.save()
 
         return urlcollection

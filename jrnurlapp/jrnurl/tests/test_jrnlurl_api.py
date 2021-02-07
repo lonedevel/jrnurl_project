@@ -119,7 +119,8 @@ class PrivateApiTests(TestCase):
         self.assertEqual(res.data, serializer.data)
 
     def test_create_simple_urlcollection_successful(self):
-        """Test creating a new simple urlcollection using the api"""
+        """Test creating a new simple urlcollection
+        using the api is successful"""
         payload = {
             'name': 'Simple URL Collection',
             'description':
@@ -137,6 +138,26 @@ class PrivateApiTests(TestCase):
             name=payload['name']
         ).exists()
         self.assertTrue(exists)
+
+    def test_create_simple_urlcollection_unsuccessful(self):
+        """Test creating a new simple urlcollection
+        using the api is unsuccessful"""
+        payload = {
+            'name': 'Simple URL Collection',
+            'description':
+                'A nicely curated test collection of incredible URLs',
+            'collection_type': 400
+        }
+        res = self.client.post(URLCOLLECTION_URL, payload)
+        # print(res.data)
+
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        exists = URLCollection.objects.filter(
+            user=self.user,
+            name=payload['name']
+        ).exists()
+        self.assertFalse(exists)
 
     def test_create_complex_urlcollection_successful(self):
         """Test creating a new complex urlcollection using the api"""
@@ -174,3 +195,112 @@ class PrivateApiTests(TestCase):
             name=payload['name']
         ).exists()
         self.assertTrue(exists)
+
+    def test_create_urlitem_successful(self):
+        """Test creating a new urlitem is successful"""
+        payload = {
+            'title': 'Google Search',
+            'url': 'http://google.com',
+            'visits': 1,
+            'user': self.user.id
+        }
+
+        res = self.client.post(URLITEM_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        exists = URLItem.objects.filter(
+            user=self.user,
+            title=payload['title']
+        ).exists()
+        self.assertTrue(exists)
+
+    def test_create_urlitem_unsuccessful(self):
+        """Test creating a urlitem is unsuccessful"""
+        payload = {
+            'title': 'Google Search',
+            'url': 'http://google.com',
+            'visits': 1
+        }
+
+        res = self.client.post(URLITEM_URL, payload)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        exists = URLItem.objects.filter(
+            user=self.user,
+            title=payload['title']
+        ).exists()
+        self.assertFalse(exists)
+
+    def test_delete_urlcollection_successful(self):
+        """Test deleting a urlcollection is successful"""
+        urlcollection = URLCollection.objects.create(
+            name='Interesting HTML URLs',
+            description='A collection of very interesting HTML test URLs',
+            collection_type=URLCollection.OTHER,
+            user=self.user
+        )
+        urlcollection.save()
+
+        delete_url = f'{URLCOLLECTION_URL}{urlcollection.id}/'
+        res = self.client.delete(delete_url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        exists = URLCollection.objects.filter(
+            user=self.user,
+            id=urlcollection.id
+        ).exists()
+        self.assertFalse(exists)
+
+    def test_delete_urlitem_successful(self):
+        """Test deleting a urlitem is successful"""
+        urlitem = URLItem.objects.create(
+            title='Tryit Editor v3.6',
+            url='https://www.w3schools.com/html/tryit.asp?'
+                'filename=tryhtml_intro',
+            visits=1,
+            user=self.user
+        )
+        urlitem.save()
+
+        delete_url = f'{URLITEM_URL}{urlitem.id}/'
+        res = self.client.delete(delete_url)
+
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+        exists = URLItem.objects.filter(
+            user=self.user,
+            id=urlitem.id
+        ).exists()
+        self.assertFalse(exists)
+
+    def test_update_urlcollection_successful(self):
+        """Test updating a URL Collection succesfully via a put request"""
+        payload = {
+            'name': 'Simple URL Collection',
+            'description':
+                'A nicely curated test collection of incredible URLs',
+            'collection_type': 400,
+            'user': self.user
+        }
+        urlcollection = URLCollection.objects.create(**payload)
+        urlcollection.save()
+
+        payload['description'] = 'The quick brown fox jumped over ' \
+                                 'the lazy dog!'
+        payload['user'] = self.user.id
+
+        urlcollection_put_url = f'{URLCOLLECTION_URL}{urlcollection.id}/'
+
+        res = self.client.put(urlcollection_put_url, payload)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        compare_urlcollection = URLCollection.objects.get(
+            user=self.user,
+            id=urlcollection.id
+        )
+
+        self.assertEqual(compare_urlcollection.description,
+                         payload['description'])
+
+# TODO Add tests for updating URLItems
+# TODO Add tests for updating complex URLCollections
+# TODO Add test for creating large batch complex URLCollection

@@ -6,6 +6,7 @@ app_name = 'jrnurl'
 
 router = DefaultRouter()
 router.register('urlcollection', views.URLCollectionViewSet)
+# router.register('urlcollection/<uuid:pk>', views.URLCollectionDetail)
 router.register('urlitem', views.URLItemViewSet)
 
 urlpatterns = [
